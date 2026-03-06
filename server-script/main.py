@@ -24,9 +24,10 @@ console = rich.console.Console()
 rich.traceback.install(console=console, show_locals=True)
 warnings.filterwarnings("ignore")
 
-blank_string = ""
+blank_line = "\n"
+current_url = ""
+current_count = 0
 
-main_style = "magenta bold"
 
 sys.stderr = open(os.devnull, "w")
 
@@ -175,12 +176,53 @@ def write_file(file_path: str, content: str | bytes, mode: str) -> None:
         file.write(content)
 
 
-async def verse_vine() -> None:
-    pass
+async def request_current_url(websocket: websockets.ServerConnection, data: dict) -> None:
+    await websocket.send(json.dumps({"type": "response_current_url", "data": {"current_url": current_url}}))
+
+
+async def submit_chapter_data(websocket: websockets.ServerConnection, data: dict) -> None:
+    global current_url, current_count
+    text_selector = soupsieve.compile(argument.text_selector)
+    url_selector = soupsieve.compile(argument.url_selector)
+    soup = bs4.BeautifulSoup(data["html"], "html.parser")
+    text_elements = text_selector.select(soup)
+    url_elements = url_selector.select(soup)
+    assert len(text_elements) > 0, f"No text element found !"
+    assert len(url_elements) > 0, f"No url element found !"
+    text = blank_line.join([element.get_text(strip=True) for element in text_elements])
+    url = url_elements[0].get("href", "")
+    assert text, "No text found in the text elements !"
+    assert url, "No url found in the url element !"
+    write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.txt"), text, "w")
+    console.print("[magenta]<verse-fox>[/magenta]", f"Successfully saved chapter-{current_count}.txt ! [{current_url}]")
+    current_url, current_count = urllib.parse.urljoin(current_url, str(url)), current_count + 1
+    if current_url == argument.stop_url:
+        console.print("[magenta]<verse-fox>[/magenta]", "Successfully reached Stop URL !")
+        await websocket.close()
+
+
+async def verse_fox(websocket: websockets.ServerConnection):
+    handler_mapping = {
+        "request_current_url": request_current_url,
+        "submit_chapter_data": submit_chapter_data,
+    }
+    async for message in websocket:
+        message = json.loads(message)
+        assert "type" in message, "Message type is required !"
+        assert "data" in message, "Message data is required !"
+        if message["type"] in handler_mapping:
+            await handler_mapping[message["type"]](websocket, message["data"])
+        else:
+            console.print("[magenta]<verse-fox>[/magenta]", f"Unknown message type: '{message['type']}' !")
 
 
 async def main() -> None:
-    pass
+    global current_url, current_count
+    current_url, current_count = argument.start_url, 1
+    os.makedirs(argument.folder_path, exist_ok=True)
+    server = await websockets.serve(verse_fox, "127.0.0.1", 6969)
+    console.print("[magenta]<verse-fox>[/magenta]", "Successfully started Verse Fox Server !")
+    await server.serve_forever()
 
 
 if __name__ == "__main__":

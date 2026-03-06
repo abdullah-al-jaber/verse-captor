@@ -1,13 +1,16 @@
 #!/bin/sh
-DEST_DIR="/usr/bin"
-DEST_PATH="$DEST_DIR/verse-fox"
+SERVER_PATH="/usr/bin/verse-fox"
+USER_PATH="/android/verse-fox.js"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "Failed to gain root permission !"
   exit 1
 fi
 
-rm $DEST_PATH || { echo "Failed to remove the script !"; exit 2; }
-echo "Successfully uninstalled the script !"
+rm $SERVER_PATH || { echo "Failed to remove server script !"; exit 2; }
+echo "Successfully uninstalled server script !"
+
+rm -f $USER_PATH || { echo "Failed to remove user script !"; exit 2; }
+echo "Successfully removed server script !"
 
 # Final Version

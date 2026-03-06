@@ -1,16 +1,22 @@
 #!/bin/sh
-URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-fox/vanilla/python-script/main.py"
-DEST_DIR="/usr/bin"
-DEST_PATH="$DEST_DIR/verse-fox"
+SERVER_URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-fox/vanilla/server-script/main.py"
+USER_URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-fox/vanilla/user-script/main.py"
+SERVER_PATH="/usr/bin/verse-fox"
+USER_PATH="/android/verse-fox.js"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "[ERROR] Failed to gain root permission !"
   exit 1
 fi
 
-curl -sSL "$URL" -o "$DEST_PATH" || { echo "Failed to download the script !"; exit 2; }
-chmod +x "$DEST_PATH" || { echo "Failed to make the script executable !"; exit 3; }
+curl -sSL "$SERVER_URL" -o "$SERVER_PATH" || { echo "Failed to download server script !"; exit 2; }
+chmod +x "$SERVER_PATH" || { echo "Failed to make server script executable !"; exit 3; }
 
-echo "Successfully installed the script !"
+echo "Successfully installed server script !"
+
+curl -sSL "$USER_URL" -o "$USER_PATH" || { echo "Failed to download user script !"; exit 4; }
+
+echo "Successfully downloaded user script !"
+echo "Please install user script ! PATH: $USER_PATH !"
 
 # Final Version

@@ -16,7 +16,7 @@ Requirements to execute the script :-
 > pip install rich rich-argparse soupsieve aiohttp bs4
 > ```
 >
-> Browser Extension : `Tampermonkey`
+> Browser Extension :- `Tampermonkey`
 
 Execute the following command to install the script :-
 

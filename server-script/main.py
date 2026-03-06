@@ -11,15 +11,13 @@ import typing
 import asyncio
 import argparse
 import warnings
+import urllib.parse
 
 import rich.console
 import rich.traceback
-import rich.progress
-import rich.panel
-import rich.live
 import rich_argparse
 import soupsieve
-import aiohttp
+import websockets
 import bs4
 
 console = rich.console.Console()
@@ -58,21 +56,19 @@ class custom_argument_parser(argparse.ArgumentParser):
 
 
 class custom_argument_namespace(argparse.Namespace):
-    file_path: str
+    start_url: str
+    stop_url: str
     folder_path: str
-    selector: str
-    worker_count: int
+    text_selector: str
+    url_selector: str
     timeout: int
 
 
-def file_path_validator(file_path: str) -> str:
-    if not os.path.isfile(file_path):
-        raise argparse.ArgumentTypeError(f"File doesn't exists ! [FILE PATH: '{file_path}']")
-    try:
-        json.loads(read_file(file_path, mode="r"))
-        return file_path
-    except Exception as error:
-        raise argparse.ArgumentTypeError(f"File is't valid ! [FILE PATH: '{file_path}'] \n ({error})")
+def url_validator(url: str) -> str:
+    parse_result = urllib.parse.urlparse(url)
+    if not (parse_result.scheme in ("http", "https") and parse_result.netloc):
+        raise argparse.ArgumentTypeError(f"URL isn't valid! [URL: '{url}']")
+    return url
 
 
 def folder_path_validator(folder_path: str) -> str:
@@ -106,17 +102,25 @@ def timeout_value_validator(timeout_value: str) -> int:
 argument_parser = custom_argument_parser(
     prog="verse-fox",
     formatter_class=rich_argparse.RichHelpFormatter,
-    description="Scrap novel from website effortlessly",
+    description="Scrap novel from website dynamically",
     epilog="No way Home !",
     add_help=False,
 )
 
 
 argument_parser.add_argument(
-    "--file-path",
-    type=file_path_validator,
-    metavar="FILE_PATH",
-    help="File Path for novel chapter urls",
+    "--start-url",
+    type=url_validator,
+    metavar="URL",
+    help="Start URL for scaping novel chapter",
+    required=True,
+)
+
+argument_parser.add_argument(
+    "--stop-url",
+    type=url_validator,
+    metavar="URL",
+    help="Stop URL for scaping novel chapter",
     required=True,
 )
 
@@ -129,7 +133,7 @@ argument_parser.add_argument(
 )
 
 argument_parser.add_argument(
-    "--selector",
+    "--text-selector",
     type=selector_validator,
     metavar="SELECTOR",
     help="Selector for extracting text from html",
@@ -137,11 +141,11 @@ argument_parser.add_argument(
 )
 
 argument_parser.add_argument(
-    "--worker-count",
-    type=count_number_validator,
-    default=5,
-    help="Worker Count for Verse Vine",
-    metavar="COUNT_NUMBER",
+    "--url-selector",
+    type=selector_validator,
+    metavar="SELECTOR",
+    help="Selector for extracting url from html",
+    required=True,
 )
 
 argument_parser.add_argument(
@@ -171,55 +175,12 @@ def write_file(file_path: str, content: str | bytes, mode: str) -> None:
         file.write(content)
 
 
-async def worker(
-    chapter_name: str,
-    chapter_url: str,
-    session: aiohttp.ClientSession,
-    selector: soupsieve.SoupSieve,
-    main_progress: rich.progress.Progress,
-    main_task_id: rich.progress.TaskID,
-    worker_semaphore: asyncio.Semaphore,
-) -> None:
-    async with worker_semaphore:
-        client_timeout = aiohttp.ClientTimeout(total=argument.timeout)
-        async with session.get(chapter_url, timeout=client_timeout, allow_redirects=True) as response:
-            response.raise_for_status()
-            html = await response.text()
-
-        soup = bs4.BeautifulSoup(html, "html.parser")
-        texts = selector.select(soup)
-        assert texts, "No elements matched the selector !"
-        text = blank_string.join(text.get_text(strip=True) for text in texts)
-
-        file_path = os.path.join(argument.folder_path, f"{chapter_name}.txt")
-        write_file(file_path, text, mode="w")
-
-        console.print("[magenta]<verse-fox>[/magenta]", f"Scraped successfully ! [FILE NAME: '{chapter_name}']")
-        main_progress.advance(main_task_id)
-
-
-async def verse_vine(main_progress: rich.progress.Progress) -> None:
-    os.makedirs(argument.folder_path, exist_ok=True)
-    chapters: dict[str, str] = json.loads(read_file(argument.file_path, mode="r"))
-    selector = soupsieve.compile(argument.selector)
-
-    main_task_id = main_progress.add_task("TOTAL", total=len(chapters), style=main_style)
-    worker_semaphore = asyncio.Semaphore(argument.worker_count)
-
-    async with aiohttp.ClientSession() as session:
-        tasks: list[typing.Coroutine[typing.Any, typing.Any, None]] = []
-        for chapter_name, chapter_url in chapters.items():
-            task = worker(chapter_name, chapter_url, session, selector, main_progress, main_task_id, worker_semaphore)
-            tasks.append(task)
-        await asyncio.gather(*tasks)
+async def verse_vine() -> None:
+    pass
 
 
 async def main() -> None:
-    main_progress = rich.progress.Progress()
-    main_panel = rich.panel.Panel(main_progress, style=main_style, width=60)
-    live_group = rich.console.Group(blank_string, main_panel)
-    with rich.live.Live(live_group, console=console, refresh_per_second=4, transient=True):
-        await verse_vine(main_progress)
+    pass
 
 
 if __name__ == "__main__":

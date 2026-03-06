@@ -13,7 +13,7 @@ Requirements to execute the script :-
 > Execute the following command for python modules :-
 >
 > ```
-> pip install rich rich-argparse soupsieve aiohttp bs4
+> pip install rich rich-argparse soupsieve websockets bs4
 > ```
 >
 > Browser Extension :- `Tampermonkey`

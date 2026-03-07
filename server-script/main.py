@@ -62,7 +62,6 @@ class custom_argument_namespace(argparse.Namespace):
     folder_path: str
     text_selector: str
     url_selector: str
-    timeout: int
 
 
 def url_validator(url: str) -> str:
@@ -84,20 +83,6 @@ def selector_validator(selector: str) -> str:
         return selector
     except Exception as error:
         raise argparse.ArgumentTypeError(f"Selector isn't valid ! [SELECTOR: '{selector}']  \n ({error})")
-
-
-def count_number_validator(count_number: str) -> int:
-    digit_check = count_number.isdigit() and count_number.isascii()
-    if not digit_check or int(count_number) <= 0:
-        raise argparse.ArgumentTypeError(f"Count Number isn't valid ! [COUNT NUMBER: '{count_number}']")
-    return int(count_number)
-
-
-def timeout_value_validator(timeout_value: str) -> int:
-    digit_check = timeout_value.isdigit() and timeout_value.isascii()
-    if not digit_check or int(timeout_value) <= 0:
-        raise argparse.ArgumentTypeError(f"Timeout Value isn't valid ! [TIMEOUT VALUE: '{timeout_value}']")
-    return int(timeout_value)
 
 
 argument_parser = custom_argument_parser(
@@ -150,14 +135,6 @@ argument_parser.add_argument(
 )
 
 argument_parser.add_argument(
-    "--timeout",
-    type=timeout_value_validator,
-    default=60,
-    help="Timeout for Verse Vine",
-    metavar="TIMEOUT_VALUE",
-)
-
-argument_parser.add_argument(
     "--help",
     action="help",
     help="Show this help message and exit",
@@ -177,7 +154,10 @@ def write_file(file_path: str, content: str | bytes, mode: str) -> None:
 
 
 async def request_current_url(websocket: websockets.ServerConnection, data: dict) -> None:
-    await websocket.send(json.dumps({"type": "response_current_url", "data": {"current_url": current_url}}))
+    data = {
+        "current_url": current_url,
+    }
+    await websocket.send(json.dumps({"type": "current_url", "data": data}))
 
 
 async def submit_chapter_data(websocket: websockets.ServerConnection, data: dict) -> None:
@@ -187,18 +167,20 @@ async def submit_chapter_data(websocket: websockets.ServerConnection, data: dict
     soup = bs4.BeautifulSoup(data["html"], "html.parser")
     text_elements = text_selector.select(soup)
     url_elements = url_selector.select(soup)
-    assert len(text_elements) > 0, f"No text element found !"
-    assert len(url_elements) > 0, f"No url element found !"
+    assert len(text_elements) > 0, "No text element found !"
+    assert len(url_elements) > 0, "No url element found !"
     text = blank_line.join([element.get_text(strip=True) for element in text_elements])
-    url = url_elements[0].get("href", "")
-    assert text, "No text found in the text elements !"
-    assert url, "No url found in the url element !"
+    text = blank_line.join([line.strip() for line in text.split(blank_line) if line.strip() != ""])
+    url = url_elements[0].get("href")
+    url = str(url).strip()
+    assert len(text) > 0, "No text found in the text elements !"
+    assert len(url) > 0, "No url found in the url element !"
     write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.txt"), text, "w")
-    console.print("[magenta]<verse-fox>[/magenta]", f"Successfully saved chapter-{current_count}.txt ! [{current_url}]")
-    current_url, current_count = urllib.parse.urljoin(current_url, str(url)), current_count + 1
+    console.print(f"SAVED: chapter-{current_count}.txt ! [{current_url}]")
     if current_url == argument.stop_url:
-        console.print("[magenta]<verse-fox>[/magenta]", "Successfully reached Stop URL !")
+        console.print("Goal Reached !")
         await websocket.close()
+    current_url, current_count = urllib.parse.urljoin(current_url, str(url)), current_count + 1
 
 
 async def verse_fox(websocket: websockets.ServerConnection):
@@ -208,12 +190,11 @@ async def verse_fox(websocket: websockets.ServerConnection):
     }
     async for message in websocket:
         message = json.loads(message)
-        assert "type" in message, "Message type is required !"
-        assert "data" in message, "Message data is required !"
+        assert "type" in message, "Message Type isn't found !"
+        assert "data" in message, "Message Data isn't found !"
+        assert message["type"] in handler_mapping, "Message Type isn't known !"
         if message["type"] in handler_mapping:
             await handler_mapping[message["type"]](websocket, message["data"])
-        else:
-            console.print("[magenta]<verse-fox>[/magenta]", f"Unknown message type: '{message['type']}' !")
 
 
 async def main() -> None:
@@ -221,8 +202,8 @@ async def main() -> None:
     current_url, current_count = argument.start_url, 1
     os.makedirs(argument.folder_path, exist_ok=True)
     server = await websockets.serve(verse_fox, "127.0.0.1", 6969)
-    console.print("[magenta]<verse-fox>[/magenta]", "Successfully started Verse Fox Server !")
-    await server.serve_forever()
+    console.print("SERVER IS RUNNING ! [127.0.0.1:6969]")
+    await server.wait_closed()
 
 
 if __name__ == "__main__":

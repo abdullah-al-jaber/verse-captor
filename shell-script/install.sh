@@ -1,6 +1,6 @@
 #!/bin/sh
 SERVER_URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-fox/vanilla/server-script/main.py"
-USER_URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-fox/vanilla/user-script/main.py"
+USER_URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-fox/vanilla/user-script/main.js"
 SERVER_PATH="/usr/bin/verse-fox"
 USER_PATH="/android/verse-fox.js"
 

@@ -12,12 +12,12 @@ import typing
 import asyncio
 import argparse
 import warnings
-import argcomplete
 import urllib.parse
 
 import rich.console
 import rich.traceback
 import rich_argparse
+import argcomplete
 import soupsieve
 import websockets
 import bs4

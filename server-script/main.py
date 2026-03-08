@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 
 #####################
 #     Verse FOX     #
@@ -11,6 +12,7 @@ import typing
 import asyncio
 import argparse
 import warnings
+import argcomplete
 import urllib.parse
 
 import rich.console
@@ -23,13 +25,12 @@ import bs4
 console = rich.console.Console()
 rich.traceback.install(console=console, show_locals=True)
 warnings.filterwarnings("ignore")
+sys.stderr = open(os.devnull, "w")
+halt_event = asyncio.Event()
 
 blank_line = "\n"
-current_url = ""
+current_url = "https://example.com/"
 current_count = 0
-
-
-sys.stderr = open(os.devnull, "w")
 
 
 @typing.overload
@@ -93,7 +94,6 @@ argument_parser = custom_argument_parser(
     add_help=False,
 )
 
-
 argument_parser.add_argument(
     "--start-url",
     type=url_validator,
@@ -140,6 +140,7 @@ argument_parser.add_argument(
     help="Show this help message and exit",
 )
 
+argcomplete.autocomplete(argument_parser)
 argument = argument_parser.parse_args(namespace=custom_argument_namespace())
 
 
@@ -157,10 +158,10 @@ async def request_current_url(websocket: websockets.ServerConnection, data: dict
     data = {
         "current_url": current_url,
     }
-    await websocket.send(json.dumps({"type": "current_url", "data": data}))
+    await websocket.send(json.dumps({"type": "response_current_url", "data": data}))
 
 
-async def submit_chapter_data(websocket: websockets.ServerConnection, data: dict) -> None:
+async def submit_html(websocket: websockets.ServerConnection, data: dict) -> None:
     global current_url, current_count
     text_selector = soupsieve.compile(argument.text_selector)
     url_selector = soupsieve.compile(argument.url_selector)
@@ -178,15 +179,15 @@ async def submit_chapter_data(websocket: websockets.ServerConnection, data: dict
     write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.txt"), text, "w")
     console.print(f"SAVED: chapter-{current_count}.txt ! [{current_url}]")
     if current_url == argument.stop_url:
-        console.print("Goal Reached !")
         await websocket.close()
+        halt_event.set()
     current_url, current_count = urllib.parse.urljoin(current_url, str(url)), current_count + 1
 
 
 async def verse_fox(websocket: websockets.ServerConnection):
     handler_mapping = {
         "request_current_url": request_current_url,
-        "submit_chapter_data": submit_chapter_data,
+        "submit_html": submit_html,
     }
     async for message in websocket:
         message = json.loads(message)
@@ -199,11 +200,14 @@ async def verse_fox(websocket: websockets.ServerConnection):
 
 async def main() -> None:
     global current_url, current_count
-    current_url, current_count = argument.start_url, 1
+    current_url, current_count = argument.start_url, current_count or 1
     os.makedirs(argument.folder_path, exist_ok=True)
     server = await websockets.serve(verse_fox, "127.0.0.1", 6969)
     console.print("SERVER IS RUNNING ! [127.0.0.1:6969]")
+    await halt_event.wait()
+    server.close()
     await server.wait_closed()
+    console.print("SERVER IS STOPPED !")
 
 
 if __name__ == "__main__":

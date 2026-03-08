@@ -170,7 +170,7 @@ async def submit_html(websocket: websockets.ServerConnection, data: dict) -> Non
     url_elements = url_selector.select(soup)
     assert len(text_elements) > 0, "No text element found !"
     assert len(url_elements) > 0, "No url element found !"
-    text = blank_line.join([element.get_text(strip=True) for element in text_elements])
+    text = blank_line.join([element.get_text(separator=blank_line, strip=True) for element in text_elements])
     text = blank_line.join([line.strip() for line in text.split(blank_line) if line.strip() != ""])
     url = url_elements[0].get("href")
     url = str(url).strip()

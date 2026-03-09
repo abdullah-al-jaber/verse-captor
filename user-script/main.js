@@ -20,6 +20,10 @@
         message_data_unknown: "yellow",
         cloudflare_challenge: "green",
     };
+    const host = document.createElement("div");
+    const shadow = host.attachShadow({ mode: "open" });
+    host.id = "verse-fox-host";
+    document.documentElement.appendChild(host);
     const indicator = document.createElement("div");
     Object.assign(indicator.style, {
         position: "fixed",
@@ -34,7 +38,7 @@
         backgroundColor: STATUS_COLORS.idle,
     });
     indicator.hidden = true;
-    document.documentElement.appendChild(indicator);
+    shadow.appendChild(indicator);
     const response_current_url = (websocket, data) => {
         if (!("current_url" in data)) return (indicator.style.backgroundColor = STATUS_COLORS.message_data_unknown);
         if (document.title == "Just a moment...") return (indicator.style.backgroundColor = STATUS_COLORS.cloudflare_challenge);

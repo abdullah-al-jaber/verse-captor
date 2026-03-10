@@ -21,22 +21,24 @@
         cloudflare_challenge: "green",
     };
     const host = document.createElement("div");
-    const shadow = host.attachShadow({ mode: "open" });
-    host.id = "verse-fox-host";
-    document.documentElement.appendChild(host);
-    const indicator = document.createElement("div");
-    Object.assign(indicator.style, {
+    Object.assign(host.style, {
         position: "fixed",
         right: "20px",
         bottom: "20px",
         zIndex: "9999",
+        border: "2px solid black",
+        borderRadius: "50px",
+    });
+    document.documentElement.appendChild(host);
+    const shadow = host.attachShadow({ mode: "open" });
+    const indicator = document.createElement("div");
+    Object.assign(indicator.style, {
         border: "5px double white",
-        boxShadow: "0 0 0px 2px black",
         borderRadius: "50px",
         width: "20px",
         height: "20px",
-        backgroundColor: STATUS_COLORS.idle,
     });
+    indicator.style.backgroundColor = STATUS_COLORS.idle;
     indicator.hidden = true;
     shadow.appendChild(indicator);
     const response_current_url = (websocket, data) => {

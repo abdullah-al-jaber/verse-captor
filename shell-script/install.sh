@@ -1,8 +1,8 @@
 #!/bin/sh
-SERVER_URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-fox/vanilla/server-script/main.py"
-USER_URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-fox/vanilla/user-script/main.js"
-SERVER_PATH="/usr/bin/verse-fox"
-USER_PATH="/android/verse-fox.js"
+SERVER_URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-captor/vanilla/server-script/main.py"
+USER_URL="https://raw.githubusercontent.com/abdullah-al-jaber/verse-captor/vanilla/user-script/main.js"
+SERVER_PATH="/usr/bin/verse-captor"
+USER_PATH="/android/verse-captor.js"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "[ERROR] Failed to gain root permission !"

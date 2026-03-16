@@ -1,6 +1,6 @@
 #!/bin/sh
-SERVER_PATH="/usr/bin/verse-fox"
-USER_PATH="/android/verse-fox.js"
+SERVER_PATH="/usr/bin/verse-captor"
+USER_PATH="/android/verse-captor.js"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "Failed to gain root permission !"

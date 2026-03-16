@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
 
-#####################
-#     Verse FOX     #
-#####################
+########################
+#     Verse CAPTOR     #
+########################
 
 import os
 import sys
@@ -87,7 +87,7 @@ def selector_validator(selector: str) -> str:
 
 
 argument_parser = custom_argument_parser(
-    prog="verse-fox",
+    prog="verse-captor",
     formatter_class=rich_argparse.RichHelpFormatter,
     description="Scrap novel from website dynamically",
     epilog="No way Home !",
@@ -184,7 +184,7 @@ async def submit_html(websocket: websockets.ServerConnection, data: dict) -> Non
     current_url, current_count = urllib.parse.urljoin(current_url, str(url)), current_count + 1
 
 
-async def verse_fox(websocket: websockets.ServerConnection):
+async def verse_captor(websocket: websockets.ServerConnection):
     handler_mapping = {
         "request_current_url": request_current_url,
         "submit_html": submit_html,
@@ -202,7 +202,7 @@ async def main() -> None:
     global current_url, current_count
     current_url, current_count = argument.start_url, current_count or 1
     os.makedirs(argument.folder_path, exist_ok=True)
-    server = await websockets.serve(verse_fox, "127.0.0.1", 6969)
+    server = await websockets.serve(verse_captor, "127.0.0.1", 6969)
     console.print("SERVER IS RUNNING ! [127.0.0.1:6969]")
     await halt_event.wait()
     server.close()

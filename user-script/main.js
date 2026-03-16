@@ -58,7 +58,6 @@
         if (!("current_url" in data)) return (indicator.style.backgroundColor = STATUS_COLORS.message_data_unknown);
         if (document.title == "Just a moment...") return (indicator.style.backgroundColor = STATUS_COLORS.cloudflare_challenge);
         if (data.current_url != window.location.href) return (window.location.href = data.current_url);
-        await wait_for_element("body");
         websocket.send(JSON.stringify({ type: "submit_html", data: { html: document.documentElement.outerHTML } }));
         websocket.send(JSON.stringify({ type: "request_current_url", data: {} }));
     };

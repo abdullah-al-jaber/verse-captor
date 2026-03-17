@@ -22,7 +22,7 @@
         cloudflare_challenge: "green",
     };
     const host = document.createElement("div");
-    host.hidden = true;
+    Object.assign(host, { hidden: true });
     Object.assign(host.style, {
         position: "fixed",
         right: "20px",

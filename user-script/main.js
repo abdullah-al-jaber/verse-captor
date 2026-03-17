@@ -22,6 +22,7 @@
         cloudflare_challenge: "green",
     };
     const host = document.createElement("div");
+    host.hidden = true;
     Object.assign(host.style, {
         position: "fixed",
         right: "20px",
@@ -40,7 +41,6 @@
         height: "20px",
     });
     indicator.style.backgroundColor = STATUS_COLORS.idle;
-    indicator.hidden = true;
     shadow.appendChild(indicator);
     const wait_for_element = async (selector) => {
         return (
@@ -62,8 +62,8 @@
         websocket.send(JSON.stringify({ type: "request_current_url", data: {} }));
     };
     const websocket = new WebSocket("ws://127.0.0.1:6969");
-    websocket.onopen = () => (indicator.hidden = false);
-    websocket.onclose = () => (indicator.hidden = true);
+    websocket.onopen = () => (host.hidden = false);
+    websocket.onclose = () => (host.hidden = true);
     websocket.onerror = () => (indicator.style.backgroundColor = STATUS_COLORS.ws_error);
     websocket.onmessage = async (event) => {
         const message = JSON.parse(event.data);

@@ -7,7 +7,7 @@ USER_PATH="/android/$MAIN_NAME.js"
 MAIN_COMPLETION_PATH="/etc/fish/completions/$MAIN_NAME.fish"
 
 if [ "$(id -u)" -ne 0 ]; then
-	echo "[ERROR] Failed to gain root permission !"
+	echo "Failed to gain root permission !"
 	exit 1
 fi
 

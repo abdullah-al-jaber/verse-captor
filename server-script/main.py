@@ -152,27 +152,26 @@ def write_file(file_path: str, content: str | bytes, mode: str) -> None:
 
 
 async def request_current_url(websocket: websockets.ServerConnection, data: dict) -> None:
-    data = {
-        "current_url": current_url,
-    }
+    data = {"current_url": current_url, "current_count": current_count}
     await websocket.send(json.dumps({"type": "response_current_url", "data": data}))
 
 
 async def submit_html(websocket: websockets.ServerConnection, data: dict) -> None:
     global current_url, current_count
+    assert current_count == data["current_count"], "Current Count Mismatch !"
     text_selector = soupsieve.compile(argument.text_selector)
     url_selector = soupsieve.compile(argument.url_selector)
     soup = bs4.BeautifulSoup(data["html"], "html.parser")
     text_elements = text_selector.select(soup)
     url_elements = url_selector.select(soup)
     assert len(text_elements) > 0, "No text element found !"
-    assert len(url_elements) > 0, "No url element found !"
+    assert len(url_elements) > 0 or current_url == argument.stop_url, "No url element found !"
     text = blank_line.join([element.get_text(separator=blank_line, strip=True) for element in text_elements])
     text = blank_line.join([line.strip() for line in text.split(blank_line) if line.strip() != ""])
     url = url_elements[0].get("href")
     url = str(url).strip()
     assert len(text) > 0, "No text found in the text elements !"
-    assert len(url) > 0, "No url found in the url element !"
+    assert len(url) > 0 or current_url == argument.stop_url, "No url found in the url element !"
     write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.txt"), text, "w")
     console.print(f"SAVED: chapter-{current_count}.txt ! [{current_url}]")
     if current_url == argument.stop_url:

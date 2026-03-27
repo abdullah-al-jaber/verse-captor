@@ -10,76 +10,76 @@
 // ==/UserScript==
 
 (async () => {
-  "use strict";
-  if (window.top !== window.self) return void 0;
-  const STATUS_COLORS = {
-    waiting: "cyan",
-    idle: "magenta",
-    ws_error: "red",
-    message_format_error: "brown",
-    message_type_unknown: "orange",
-    message_data_unknown: "yellow",
-    cloudflare_challenge: "green",
-  };
-  const host = document.createElement("div");
-  Object.assign(host, { hidden: true });
-  Object.assign(host.style, {
-    position: "fixed",
-    right: "20px",
-    bottom: "20px",
-    zIndex: "9999",
-    border: "2px solid black",
-    borderRadius: "50px",
-    backgroundColor: "white",
-  });
-  document.documentElement.appendChild(host);
-  const shadow = host.attachShadow({ mode: "open" });
-  const indicator = document.createElement("div");
-  Object.assign(indicator.style, {
-    border: "5px double white",
-    borderRadius: "50px",
-    width: "20px",
-    height: "20px",
-  });
-  indicator.style.backgroundColor = STATUS_COLORS.idle;
-  shadow.appendChild(indicator);
-  const wait_for_element = async (selector) => {
-    const query = document.querySelector(selector);
-    const promise = new Promise((resolve) => {
-      const observer = new MutationObserver(() => {
-        const element = document.querySelector(selector);
-        if (element) (observer.disconnect(), resolve(element));
-      });
-      observer.observe(document, { childList: true, subtree: true });
-    });
-    return query || (await promise);
-  };
-  const response_current_url = async (websocket, data) => {
-    if (!("current_url" in data)) return (indicator.style.backgroundColor = STATUS_COLORS.message_data_unknown);
-    if (document.title == "Just a moment...") return (indicator.style.backgroundColor = STATUS_COLORS.cloudflare_challenge);
-    if (data.current_url != window.location.href) return (window.location.href = data.current_url);
-    websocket.send(
-      JSON.stringify({
-        type: "submit_html",
-        data: { html: document.documentElement.outerHTML },
-      }),
-    );
-    websocket.send(JSON.stringify({ type: "request_current_url", data: {} }));
-  };
-  const websocket = new WebSocket("ws://127.0.0.1:6969");
-  websocket.onopen = () => (host.hidden = false);
-  websocket.onclose = () => (host.hidden = true);
-  websocket.onerror = () => (indicator.style.backgroundColor = STATUS_COLORS.ws_error);
-  websocket.onmessage = async (event) => {
-    const message = JSON.parse(event.data);
-    const handler_mapping = {
-      response_current_url: response_current_url,
+    "use strict";
+    if (window.top !== window.self) return void 0;
+    const STATUS_COLORS = {
+        waiting: "cyan",
+        idle: "magenta",
+        ws_error: "red",
+        message_format_error: "brown",
+        message_type_unknown: "orange",
+        message_data_unknown: "yellow",
+        cloudflare_challenge: "green",
     };
-    if (!("type" in message && "data" in message)) return (indicator.style.backgroundColor = STATUS_COLORS.message_format_error);
-    if (!(message.type in handler_mapping)) return (indicator.style.backgroundColor = STATUS_COLORS.message_type_unknown);
-    await handler_mapping[message.type](websocket, message.data);
-  };
-  websocket.addEventListener("open", () => {
-    websocket.send(JSON.stringify({ type: "request_current_url", data: {} }));
-  });
+    const host = document.createElement("div");
+    Object.assign(host, { hidden: true });
+    Object.assign(host.style, {
+        position: "fixed",
+        right: "20px",
+        bottom: "20px",
+        zIndex: "9999",
+        border: "2px solid black",
+        borderRadius: "50px",
+        backgroundColor: "white",
+    });
+    document.documentElement.appendChild(host);
+    const shadow = host.attachShadow({ mode: "open" });
+    const indicator = document.createElement("div");
+    Object.assign(indicator.style, {
+        border: "5px double white",
+        borderRadius: "50px",
+        width: "20px",
+        height: "20px",
+    });
+    indicator.style.backgroundColor = STATUS_COLORS.idle;
+    shadow.appendChild(indicator);
+    const wait_for_element = async (selector) => {
+        const query = document.querySelector(selector);
+        const promise = new Promise((resolve) => {
+            const observer = new MutationObserver(() => {
+                const element = document.querySelector(selector);
+                if (element) (observer.disconnect(), resolve(element));
+            });
+            observer.observe(document, { childList: true, subtree: true });
+        });
+        return query || (await promise);
+    };
+    const response_current_url = async (websocket, data) => {
+        if (!("current_url" in data && "current_count" in data)) return (indicator.style.backgroundColor = STATUS_COLORS.message_data_unknown);
+        if (document.title == "Just a moment...") return (indicator.style.backgroundColor = STATUS_COLORS.cloudflare_challenge);
+        if (data.current_url != window.location.href) return (window.location.href = data.current_url);
+        websocket.send(
+            JSON.stringify({
+                type: "submit_html",
+                data: { current_count: data.current_count, html: document.documentElement.outerHTML },
+            }),
+        );
+        websocket.send(JSON.stringify({ type: "request_current_url", data: {} }));
+    };
+    const websocket = new WebSocket("ws://127.0.0.1:6969");
+    websocket.onopen = () => (host.hidden = false);
+    websocket.onclose = () => (host.hidden = true);
+    websocket.onerror = () => (indicator.style.backgroundColor = STATUS_COLORS.ws_error);
+    websocket.onmessage = async (event) => {
+        const message = JSON.parse(event.data);
+        const handler_mapping = {
+            response_current_url: response_current_url,
+        };
+        if (!("type" in message && "data" in message)) return (indicator.style.backgroundColor = STATUS_COLORS.message_format_error);
+        if (!(message.type in handler_mapping)) return (indicator.style.backgroundColor = STATUS_COLORS.message_type_unknown);
+        await handler_mapping[message.type](websocket, message.data);
+    };
+    websocket.addEventListener("open", () => {
+        websocket.send(JSON.stringify({ type: "request_current_url", data: {} }));
+    });
 })();

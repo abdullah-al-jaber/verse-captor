@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PYTHON_ARGCOMPLETE_OK
 
 ########################
 #     Verse Captor     #
@@ -17,7 +16,6 @@ import urllib.parse
 import rich.console
 import rich.traceback
 import rich_argparse
-import argcomplete
 import soupsieve
 import websockets
 import bs4
@@ -140,7 +138,6 @@ argument_parser.add_argument(
     help="Show this help message and exit",
 )
 
-argcomplete.autocomplete(argument_parser)
 argument = argument_parser.parse_args(namespace=custom_argument_namespace())
 
 
@@ -213,4 +210,4 @@ async def main() -> None:
 if __name__ == "__main__":
     asyncio.run(main())
 
-# Final Version [line-length : 120]
+# Final Version [line-length : 150]

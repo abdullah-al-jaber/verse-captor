@@ -168,8 +168,7 @@ async def submit_html(websocket: websockets.ServerConnection, data: dict) -> Non
     assert len(url_elements) > 0 or current_url == argument.stop_url, "No url element found !"
     text = blank_line.join([element.get_text(separator=blank_line, strip=True) for element in text_elements])
     text = blank_line.join([line.strip() for line in text.split(blank_line) if line.strip() != ""])
-    url = url_elements[0].get("href")
-    url = str(url).strip()
+    if current_url != argument.stop_url: url = url_elements[0]['href'].strip()
     assert len(text) > 0, "No text found in the text elements !"
     assert len(url) > 0 or current_url == argument.stop_url, "No url found in the url element !"
     write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.txt"), text, "w")

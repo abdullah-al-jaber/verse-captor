@@ -152,6 +152,7 @@ def write_file(file_path: str, content: str | bytes, mode: str) -> None:
 
 
 async def request_current_url(websocket: websockets.ServerConnection, data: dict) -> None:
+    if halt_event.is_set(): return await websocket.close()
     data = {"current_url": current_url, "current_count": current_count}
     await websocket.send(json.dumps({"type": "response_current_url", "data": data}))
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Verse Captor
 // @namespace    https://github.com/abdullah-al-jaber
-// @version      2.0
+// @version      2.5
 // @description  Scrape novels from websites
 // @author       Retro Boy
 // @match        *://*/*

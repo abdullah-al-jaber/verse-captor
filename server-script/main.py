@@ -70,6 +70,12 @@ def url_validator(url: str) -> str:
     return url
 
 
+def file_path_validator(file_path: str) -> str:
+    if not os.path.isfile(file_path):
+        raise argparse.ArgumentTypeError(f"File doesn't exist ! [FILE PATH: '{file_path}']")
+    return file_path
+
+
 def folder_path_validator(folder_path: str) -> str:
     if os.path.isdir(folder_path) and len(os.listdir(folder_path)) != 0:
         raise argparse.ArgumentTypeError(f"Folder isn't empty ! [FOLDER PATH: '{folder_path}']")
@@ -97,7 +103,6 @@ argument_parser.add_argument(
     type=url_validator,
     metavar="URL",
     help="Start URL for scaping novel chapter",
-    required=True,
 )
 
 argument_parser.add_argument(
@@ -105,7 +110,13 @@ argument_parser.add_argument(
     type=url_validator,
     metavar="URL",
     help="Stop URL for scaping novel chapter",
-    required=True,
+)
+
+argument_parser.add_argument(
+    "--file-path",
+    type=file_path_validator,
+    metavar="FILE_PATH",
+    help="File Path for novel chapter urls",
 )
 
 argument_parser.add_argument(
@@ -140,6 +151,16 @@ argument_parser.add_argument(
 
 argument = argument_parser.parse_args(namespace=custom_argument_namespace())
 
+_file_path = argument.file_path is not None
+_start_url = argument.start_url is not None
+_stop_url = argument.stop_url is not None
+
+_mode_file = _file_path and not (_start_url or _stop_url)
+_mode_url = (_start_url or _stop_url) and not _file_path
+
+if _mode_file == _mode_url:
+    custom_argument_parser.error(argument_parser, "Required arguments: --file-path or (--start-url and --stop-url)")
+
 
 def read_file(file_path: str, mode: str) -> str | bytes:
     with open(file_path, mode) as file:
@@ -171,13 +192,20 @@ async def submit_html(websocket: websockets.ServerConnection, data: dict) -> Non
     assert len(text) > 0, "No text found in the text elements !"
     write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.txt"), text, "w")
     console.print(f"SAVED: chapter-{current_count}.txt ! [{current_url}]")
-    if current_url == argument.stop_url:
-        await websocket.close()
-        return halt_event.set()
-    assert len(url_elements) > 0, "No url element found !"
-    url = url_elements[0]['href'].strip()
-    assert len(url) > 0, "No url found in the url element !"
-    current_url, current_count = urllib.parse.urljoin(current_url, str(url)), current_count + 1
+    if _mode_url:
+        if current_url == argument.stop_url:
+            await websocket.close()
+            return halt_event.set()
+        assert len(url_elements) > 0, "No url element found !"
+        url = url_elements[0]['href'].strip()
+        assert len(url) > 0, "No url found in the url element !"
+        current_url, current_count = urllib.parse.urljoin(current_url, str(url)), current_count + 1
+    if _mode_file:
+        chapter_urls = read_file(argument.file_path, "r").split("\n")
+        if chapter_urls.index(current_url) == len(chapter_urls) - 1:
+            await websocket.close()
+            return halt_event.set()
+        current_url = chapter_urls[chapter_urls.index(current_url) + 1]
 
 
 async def verse_captor(websocket: websockets.ServerConnection):
@@ -196,7 +224,12 @@ async def verse_captor(websocket: websockets.ServerConnection):
 
 async def main() -> None:
     global current_url, current_count
-    current_url, current_count = argument.start_url, current_count or 1
+    current_count = current_count or 1
+    if _mode_url:
+        current_url = argument.start_url
+    if _mode_file:
+        chapter_urls = read_file(argument.file_path, "r").split("\n")
+        current_url = chapter_urls[0]
     os.makedirs(argument.folder_path, exist_ok=True)
     server = await websockets.serve(verse_captor, "127.0.0.1", 6969)
     console.print("SERVER IS RUNNING ! [127.0.0.1:6969]")

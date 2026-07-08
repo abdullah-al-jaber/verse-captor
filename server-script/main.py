@@ -205,7 +205,7 @@ async def submit_html(websocket: websockets.ServerConnection, data: dict) -> Non
         if chapter_urls.index(current_url) == len(chapter_urls) - 1:
             await websocket.close()
             return halt_event.set()
-        current_url = chapter_urls[chapter_urls.index(current_url) + 1]
+        current_url, current_count = chapter_urls[chapter_urls.index(current_url) + 1], current_count + 1
 
 
 async def verse_captor(websocket: websockets.ServerConnection):

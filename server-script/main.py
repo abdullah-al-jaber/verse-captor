@@ -156,7 +156,7 @@ _stop_url = argument.stop_url is not None
 _url_selector = argument.url_selector is not None
 
 _mode_file = _file_path and not (_start_url or _stop_url or _url_selector)
-_mode_url = (_start_url and  _stop_url and _url_selector) and not _file_path
+_mode_url = (_start_url and _stop_url and _url_selector) and not _file_path
 
 if _mode_file == _mode_url:
     argument_parser.error(argument_parser, "Required arguments: --file-path or (--start-url and --stop-url and --url-selector)")

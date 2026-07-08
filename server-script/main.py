@@ -159,7 +159,7 @@ _mode_file = _file_path and not (_start_url or _stop_url)
 _mode_url = (_start_url or _stop_url) and not _file_path
 
 if _mode_file == _mode_url:
-    custom_argument_parser.error(argument_parser, "Required arguments: --file-path or (--start-url and --stop-url)")
+    argument_parser.error(argument_parser, "Required arguments: --file-path or (--start-url and --stop-url)")
 
 
 def read_file(file_path: str, mode: str) -> str | bytes:

@@ -140,7 +140,6 @@ argument_parser.add_argument(
     type=selector_validator,
     metavar="SELECTOR",
     help="Selector for extracting url from html",
-    required=True,
 )
 
 argument_parser.add_argument(
@@ -154,12 +153,13 @@ argument = argument_parser.parse_args(namespace=custom_argument_namespace())
 _file_path = argument.file_path is not None
 _start_url = argument.start_url is not None
 _stop_url = argument.stop_url is not None
+_url_selector = argument.url_selector is not None
 
-_mode_file = _file_path and not (_start_url or _stop_url)
-_mode_url = (_start_url or _stop_url) and not _file_path
+_mode_file = _file_path and not (_start_url or _stop_url or _url_selector)
+_mode_url = (_start_url and  _stop_url and _url_selector) and not _file_path
 
 if _mode_file == _mode_url:
-    argument_parser.error(argument_parser, "Required arguments: --file-path or (--start-url and --stop-url)")
+    argument_parser.error(argument_parser, "Required arguments: --file-path or (--start-url and --stop-url and --url-selector)")
 
 
 def read_file(file_path: str, mode: str) -> str | bytes:

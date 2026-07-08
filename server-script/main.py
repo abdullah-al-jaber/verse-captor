@@ -181,11 +181,9 @@ async def request_current_url(websocket: websockets.ServerConnection, data: dict
 async def submit_html(websocket: websockets.ServerConnection, data: dict) -> None:
     global current_url, current_count
     assert current_count == data["current_count"], "Current Count Mismatch !"
-    text_selector = soupsieve.compile(argument.text_selector)
-    url_selector = soupsieve.compile(argument.url_selector)
     soup = bs4.BeautifulSoup(data["html"], "html.parser")
+    text_selector = soupsieve.compile(argument.text_selector)
     text_elements = text_selector.select(soup)
-    url_elements = url_selector.select(soup)
     assert len(text_elements) > 0, "No text element found !"
     text = blank_line.join([element.get_text(separator=blank_line, strip=True) for element in text_elements])
     text = blank_line.join([line.strip() for line in text.split(blank_line) if line.strip() != ""])
@@ -193,6 +191,8 @@ async def submit_html(websocket: websockets.ServerConnection, data: dict) -> Non
     write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.txt"), text, "w")
     console.print(f"SAVED: chapter-{current_count}.txt ! [{current_url}]")
     if _mode_url:
+        url_selector = soupsieve.compile(argument.url_selector)
+        url_elements = url_selector.select(soup)
         if current_url == argument.stop_url:
             await websocket.close()
             return halt_event.set()

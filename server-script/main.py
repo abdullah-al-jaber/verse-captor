@@ -218,7 +218,7 @@ async def submit_work(websocket: websockets.ServerConnection, data: dict) -> Non
             return halt_event.set()
         target_url = chapter_urls[chapter_urls.index(target_url) + 1]
     else:
-        raise Exception("Mode values aren't as usual !")
+        raise Exception("Mode values aren't looking good !")
     current_count += 1
 
 
@@ -253,7 +253,7 @@ async def main() -> None:
         assert len(chapter_urls) == len(set(chapter_urls)), "Chapter urls have duplicates !"
         target_url = chapter_urls[0]
     else:
-        raise Exception("Mode values aren't as usual !")
+        raise Exception("Mode values aren't looking good !")
     os.makedirs(argument.folder_path, exist_ok=True)
     server = await websockets.serve(verse_captor, "127.0.0.1", 6969)
     console.print("SERVER IS RUNNING ! [127.0.0.1:6969]")

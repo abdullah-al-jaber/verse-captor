@@ -60,7 +60,7 @@ class custom_argument_namespace(argparse.Namespace):
     file_path: str
     folder_path: str
     text_selector: str
-    show_locals: str
+    show_locals: bool
 
 
 def url_validator(url: str) -> str:

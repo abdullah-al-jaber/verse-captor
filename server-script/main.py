@@ -185,8 +185,9 @@ async def request_work(websocket: websockets.ServerConnection, data: dict) -> No
 
 async def submit_work(websocket: websockets.ServerConnection, data: dict) -> None:
     global target_url, current_count
-    assert target_url == data["target_url"], "Mismatch between target urls !"
+    assert "target_url" in data, "Target URL isn't found !"
     assert "target_content" in data, "Target Content isn't found !"
+    assert target_url == data["target_url"], "Mismatch between target urls !"
     if argument.text_selector:
         soup = bs4.BeautifulSoup(data["target_content"], "html.parser")
         text_selector = soupsieve.compile(argument.text_selector)

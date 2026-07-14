@@ -61,22 +61,22 @@
         });
         return query || (await promise);
     };
-    const response_current_url = async (websocket, data) => {
-        if (!("current_url" in data && "current_count" in data)) return (indicator.style.backgroundColor = STATUS_COLORS.message_data_unknown);
+    const response_work = async (websocket, data) => {
+        if (!("target_url" in data)) return (indicator.style.backgroundColor = STATUS_COLORS.message_data_unknown);
         if (document.title == "Just a moment...") return (indicator.style.backgroundColor = STATUS_COLORS.cloudflare_challenge);
-        if (data.current_url != window.location.href) return (window.location.href = data.current_url);
+        if (data.target_url != window.location.href) return (window.location.href = data.target_url);
         websocket.send(
             JSON.stringify({
-                type: "submit_html",
+                type: "submit_work",
                 data: {
-                    current_count: data.current_count,
-                    html: document.documentElement.outerHTML,
+                    target_url: data.current_count,
+                    target_content: document.documentElement.outerHTML,
                 },
             }),
         );
         websocket.send(
             JSON.stringify({
-                type: "request_current_url",
+                type: "request_work",
                 data: {},
             }),
         );
@@ -88,7 +88,7 @@
     websocket.onmessage = async (event) => {
         const message = JSON.parse(event.data);
         const handler_mapping = {
-            response_current_url: response_current_url,
+            response_work: response_work,
         };
         if (!("type" in message && "data" in message)) return (indicator.style.backgroundColor = STATUS_COLORS.message_format_error);
         if (!(message.type in handler_mapping)) return (indicator.style.backgroundColor = STATUS_COLORS.message_type_unknown);
@@ -97,7 +97,7 @@
     websocket.addEventListener("open", () => {
         websocket.send(
             JSON.stringify({
-                type: "request_current_url",
+                type: "request_work",
                 data: {},
             }),
         );

@@ -11,7 +11,7 @@
 
 (async () => {
     "use strict";
-    if (window.top !== window.self) return void 0;
+    if (window.top !== window.self) return null;
     const STATUS_COLORS = {
         waiting: "cyan",
         idle: "magenta",
@@ -23,7 +23,7 @@
     };
     const host = document.createElement("div");
     Object.assign(host, {
-        hidden: true
+        hidden: true,
     });
     Object.assign(host.style, {
         position: "fixed",
@@ -36,7 +36,7 @@
     });
     document.documentElement.appendChild(host);
     const shadow = host.attachShadow({
-        mode: "open"
+        mode: "open",
     });
     const indicator = document.createElement("div");
     Object.assign(indicator.style, {
@@ -52,11 +52,11 @@
         const promise = new Promise((resolve) => {
             const observer = new MutationObserver(() => {
                 const element = document.querySelector(selector);
-                if (element)(observer.disconnect(), resolve(element));
+                if (element) (observer.disconnect(), resolve(element));
             });
             observer.observe(document, {
                 childList: true,
-                subtree: true
+                subtree: true,
             });
         });
         return query || (await promise);
@@ -65,17 +65,21 @@
         if (!("current_url" in data && "current_count" in data)) return (indicator.style.backgroundColor = STATUS_COLORS.message_data_unknown);
         if (document.title == "Just a moment...") return (indicator.style.backgroundColor = STATUS_COLORS.cloudflare_challenge);
         if (data.current_url != window.location.href) return (window.location.href = data.current_url);
-        websocket.send(JSON.stringify({
-            type: "submit_html",
-            data: {
-                current_count: data.current_count,
-                html: document.documentElement.outerHTML
-            },
-        }), );
-        websocket.send(JSON.stringify({
-            type: "request_current_url",
-            data: {}
-        }));
+        websocket.send(
+            JSON.stringify({
+                type: "submit_html",
+                data: {
+                    current_count: data.current_count,
+                    html: document.documentElement.outerHTML,
+                },
+            }),
+        );
+        websocket.send(
+            JSON.stringify({
+                type: "request_current_url",
+                data: {},
+            }),
+        );
     };
     const websocket = new WebSocket("ws://127.0.0.1:6969");
     websocket.onopen = () => (host.hidden = false);
@@ -91,9 +95,11 @@
         await handler_mapping[message.type](websocket, message.data);
     };
     websocket.addEventListener("open", () => {
-        websocket.send(JSON.stringify({
-            type: "request_current_url",
-            data: {}
-        }));
+        websocket.send(
+            JSON.stringify({
+                type: "request_current_url",
+                data: {},
+            }),
+        );
     });
 })();

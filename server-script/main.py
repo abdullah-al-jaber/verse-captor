@@ -10,7 +10,6 @@ import json
 import typing
 import asyncio
 import argparse
-import warnings
 import urllib.parse
 
 import rich.console
@@ -22,12 +21,11 @@ import bs4
 
 console = rich.console.Console()
 rich.traceback.install(console=console, show_locals=True)
-warnings.filterwarnings("ignore")
-# sys.stderr = open(os.devnull, "w")
 halt_event = asyncio.Event()
+sys.stderr = open(os.devnull, "w")
 
 blank_line = "\n"
-current_url = "https://example.com/"
+target_url = "https://example.com/"
 current_count = 0
 
 
@@ -58,9 +56,11 @@ class custom_argument_parser(argparse.ArgumentParser):
 class custom_argument_namespace(argparse.Namespace):
     start_url: str
     stop_url: str
+    url_selector: str
+    file_path: str
     folder_path: str
     text_selector: str
-    url_selector: str
+    show_locals: str
 
 
 def url_validator(url: str) -> str:
@@ -113,6 +113,13 @@ argument_parser.add_argument(
 )
 
 argument_parser.add_argument(
+    "--url-selector",
+    type=selector_validator,
+    metavar="SELECTOR",
+    help="Selector for extracting url from html",
+)
+
+argument_parser.add_argument(
     "--file-path",
     type=file_path_validator,
     metavar="FILE_PATH",
@@ -132,14 +139,12 @@ argument_parser.add_argument(
     type=selector_validator,
     metavar="SELECTOR",
     help="Selector for extracting text from html",
-    required=True,
 )
 
 argument_parser.add_argument(
-    "--url-selector",
-    type=selector_validator,
-    metavar="SELECTOR",
-    help="Selector for extracting url from html",
+    "--show-locals",
+    action="store_true",
+    help="Show local variables for rich.traceback",
 )
 
 argument_parser.add_argument(
@@ -161,6 +166,8 @@ _mode_url = (_start_url and _stop_url and _url_selector) and not _file_path
 if _mode_file == _mode_url:
     argument_parser.error("Required arguments: --file-path or (--start-url and --stop-url and --url-selector)")
 
+rich.traceback.install(console=console, show_locals=argument.show_locals)
+
 
 def read_file(file_path: str, mode: str) -> str | bytes:
     with open(file_path, mode) as file:
@@ -172,64 +179,78 @@ def write_file(file_path: str, content: str | bytes, mode: str) -> None:
         file.write(content)
 
 
-async def request_current_url(websocket: websockets.ServerConnection, data: dict) -> None:
-    if halt_event.is_set(): return await websocket.close()
-    data = {"current_url": current_url, "current_count": current_count}
-    await websocket.send(json.dumps({"type": "response_current_url", "data": data}))
+async def request_work(websocket: websockets.ServerConnection, data: dict) -> None:
+    await websocket.send(json.dumps({"type": "response_work", "data": {"target_url": target_url}}))
 
 
-async def submit_html(websocket: websockets.ServerConnection, data: dict) -> None:
-    global current_url, current_count
-    assert current_count == data["current_count"], "Current Count Mismatch !"
-    soup = bs4.BeautifulSoup(data["html"], "html.parser")
-    text_selector = soupsieve.compile(argument.text_selector)
-    text_elements = text_selector.select(soup)
-    assert len(text_elements) > 0, "No text element found !"
-    text = blank_line.join([element.get_text(separator=blank_line, strip=True) for element in text_elements])
-    text = blank_line.join([line.strip() for line in text.split(blank_line) if line.strip() != ""])
-    assert len(text) > 0, "No text found in the text elements !"
-    write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.txt"), text, "w")
-    console.print(f"SAVED: chapter-{current_count}.txt ! [{current_url}]")
+async def submit_work(websocket: websockets.ServerConnection, data: dict) -> None:
+    global target_url, current_count
+    assert target_url == data["target_url"], "Mismatch between target urls !"
+    assert "target_content" in data, "Target Content isn't found !"
+    if argument.text_selector:
+        soup = bs4.BeautifulSoup(data["target_content"], "html.parser")
+        text_selector = soupsieve.compile(argument.text_selector)
+        text_elements = text_selector.select(soup)
+        assert len(text_elements) > 0, "No text element found !"
+        text = blank_line.join([element.get_text(separator=blank_line, strip=True) for element in text_elements])
+        text = blank_line.join([line.strip() for line in text.split(blank_line) if line.strip() != ""])
+        assert len(text) > 0, "No text found in the text elements !"
+        write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.txt"), text, "w")
+        console.print(f"SUCCESS: chapter-{current_count}.txt ! [{target_url}]")
+    else:
+        write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.html"), data["target_content"], "w")
+        console.print(f"SUCCESS: chapter-{current_count}.html ! [{target_url}]")
     if _mode_url:
         url_selector = soupsieve.compile(argument.url_selector)
         url_elements = url_selector.select(soup)
-        if current_url == argument.stop_url:
+        if target_url == argument.stop_url:
             await websocket.close()
             return halt_event.set()
         assert len(url_elements) > 0, "No url element found !"
-        url = url_elements[0]['href'].strip()
+        url = url_elements[0]["href"].strip()
         assert len(url) > 0, "No url found in the url element !"
-        current_url, current_count = urllib.parse.urljoin(current_url, str(url)), current_count + 1
-    if _mode_file:
+        target_url = urllib.parse.urljoin(target_url, str(url))
+    elif _mode_file:
         chapter_urls = read_file(argument.file_path, "r").split("\n")
-        if chapter_urls.index(current_url) == len(chapter_urls) - 1:
+        if chapter_urls.index(target_url) == len(chapter_urls) - 1:
             await websocket.close()
             return halt_event.set()
-        current_url, current_count = chapter_urls[chapter_urls.index(current_url) + 1], current_count + 1
+        target_url = chapter_urls[chapter_urls.index(target_url) + 1]
+    else:
+        raise Exception("Mode values aren't as usual !")
+    current_count += 1
 
 
 async def verse_captor(websocket: websockets.ServerConnection):
     handler_mapping = {
-        "request_current_url": request_current_url,
-        "submit_html": submit_html,
+        "request_work": request_work,
+        "submit_work": submit_work,
     }
     async for message in websocket:
-        message = json.loads(message)
-        assert "type" in message, "Message Type isn't found !"
-        assert "data" in message, "Message Data isn't found !"
-        assert message["type"] in handler_mapping, "Message Type isn't known !"
-        if message["type"] in handler_mapping:
-            await handler_mapping[message["type"]](websocket, message["data"])
+        if halt_event.is_set():
+            return await websocket.close()
+        try:
+            message = json.loads(message)
+            assert "type" in message, "Message Type isn't found !"
+            assert "data" in message, "Message Data isn't found !"
+            assert message["type"] in handler_mapping, "Message Type isn't known !"
+            if message["type"] in handler_mapping:
+                await handler_mapping[message["type"]](websocket, message["data"])
+        except Exception:
+            console.print_exception()
 
 
 async def main() -> None:
-    global current_url, current_count
+    global target_url, current_count
     current_count = current_count or 1
     if _mode_url:
-        current_url = argument.start_url
-    if _mode_file:
+        target_url = argument.start_url
+    elif _mode_file:
         chapter_urls = read_file(argument.file_path, "r").split("\n")
-        current_url = chapter_urls[0]
+        assert len(chapter_urls) == len(set(chapter_urls)), "Chapter urls have duplicates !"
+        target_url = chapter_urls[0]
+    else:
+        raise Exception("Mode values aren't as usual !")
     os.makedirs(argument.folder_path, exist_ok=True)
     server = await websockets.serve(verse_captor, "127.0.0.1", 6969)
     console.print("SERVER IS RUNNING ! [127.0.0.1:6969]")
@@ -241,5 +262,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-# Final Version [line-length : 150]

@@ -16,7 +16,7 @@ rm "$MAIN_COMPLETION_PATH" || {
     echo "FAILURE: rm \"$MAIN_COMPLETION_PATH\" !" && exit
 }
 
-rm -f "$USER_PATH" "$MAIN_NAME.js" || {
+rm "$USER_PATH" "$MAIN_NAME.js" || {
     echo "FAILURE: rm \"$USER_PATH\" \"$MAIN_NAME.js\" !" && exit
 }
 

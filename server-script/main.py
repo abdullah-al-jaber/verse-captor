@@ -185,7 +185,6 @@ async def request_work(websocket: websockets.ServerConnection, data: dict) -> No
 
 async def submit_work(websocket: websockets.ServerConnection, data: dict) -> None:
     global target_url, current_count
-    console.print(data)
     assert "target_url" in data and "target_content" in data, "Data isn't valid !"
     assert target_url == data["target_url"], "Mismatch between target urls !"
     if argument.text_selector:

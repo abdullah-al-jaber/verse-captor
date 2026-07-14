@@ -222,7 +222,7 @@ async def submit_work(websocket: websockets.ServerConnection, data: dict) -> Non
     current_count += 1
 
 
-async def verse_captor(websocket: websockets.ServerConnection):
+async def verse_captor(websocket: websockets.ServerConnection) -> None:
     handler_mapping = {
         "request_work": request_work,
         "submit_work": submit_work,

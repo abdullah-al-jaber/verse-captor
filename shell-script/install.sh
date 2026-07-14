@@ -29,5 +29,5 @@ mv "$MAIN_NAME.js" "$USER_PATH" 2>/dev/null || {
     USER_PATH="/$(pwd)/$MAIN_NAME.js"
 }
 
-echo "SUCCESS: ALL DONE !"
+echo "SUCCESS: INSTALL DONE !"
 echo "Please install user script ! PATH: \"$USER_PATH\" !"

@@ -18,4 +18,4 @@ rm "$MAIN_COMPLETION_PATH" || {
 
 rm "$USER_PATH" "$MAIN_NAME.js" 2>/dev/null
 
-echo "SUCCESS: ALL DONE !"
+echo "SUCCESS: UNINSTALL DONE !"

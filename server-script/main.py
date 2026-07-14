@@ -239,6 +239,8 @@ async def verse_captor(websocket: websockets.ServerConnection):
                 await handler_mapping[message["type"]](websocket, message["data"])
         except Exception:
             console.print_exception(show_locals=argument.show_locals)
+            await websocket.close()
+            return halt_event.set()
 
 
 async def main() -> None:

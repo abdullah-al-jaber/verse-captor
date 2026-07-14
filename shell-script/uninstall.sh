@@ -9,7 +9,7 @@ MAIN_COMPLETION_PATH="/etc/fish/completions/$MAIN_NAME.fish"
 }
 
 rm "$SERVER_PATH" || {
-    echo "FAILURE: rm \"$USER_PATH\" !" && exit
+    echo "FAILURE: rm \"$SERVER_PATH\" !" && exit
 }
 
 rm "$MAIN_COMPLETION_PATH" || {

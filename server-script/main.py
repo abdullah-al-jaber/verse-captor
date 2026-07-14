@@ -185,6 +185,7 @@ async def request_work(websocket: websockets.ServerConnection, data: dict) -> No
 
 async def submit_work(websocket: websockets.ServerConnection, data: dict) -> None:
     global target_url, current_count
+    console.print(data)
     assert "target_url" in data and "target_content" in data, "Data isn't valid !"
     assert target_url == data["target_url"], "Mismatch between target urls !"
     if argument.text_selector:
@@ -201,6 +202,7 @@ async def submit_work(websocket: websockets.ServerConnection, data: dict) -> Non
         write_file(os.path.join(argument.folder_path, f"chapter-{current_count}.html"), data["target_content"], "w")
         console.print(f"SUCCESS: chapter-{current_count}.html ! [{target_url}]")
     if _mode_url:
+        soup = bs4.BeautifulSoup(data["target_content"], "html.parser")
         url_selector = soupsieve.compile(argument.url_selector)
         url_elements = url_selector.select(soup)
         if target_url == argument.stop_url:

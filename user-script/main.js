@@ -69,7 +69,7 @@
             JSON.stringify({
                 type: "submit_work",
                 data: {
-                    target_url: data.current_count,
+                    target_url: data.target_url,
                     target_content: document.documentElement.outerHTML,
                 },
             }),
